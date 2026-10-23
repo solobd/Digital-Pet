@@ -1,0 +1,25 @@
+name: 🐾 Daily Pet Care
+
+on:
+  schedule:
+    - cron: '0 2 * * *'   # 8:00 AM Bangladesh (UTC+6)
+    - cron: '0 14 * * *'  # 8:00 PM Bangladesh
+  workflow_dispatch:       # Manual trigger for testing
+
+jobs:
+  care:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🐾 Run pet care
+        env:
+          FIREBASE_URL: ${{ secrets.FIREBASE_URL }}
+          BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+        run: node scripts/pet-care.js
