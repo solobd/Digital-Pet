@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>🐣 My Digital Pet</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;color:#333;display:flex;justify-content:center;align-items:center;padding:0;overflow:hidden}
+.app{width:min(100%,440px);height:100vh;height:100dvh;background:#fff;position:relative;overflow:hidden;display:flex;flex-direction:column;border-radius:0;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+@media(min-width:480px){.app{height:min(100vh,900px);border-radius:32px;margin:20px}}
+
+/* Screens */
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;padding:24px 20px;overflow-y:auto;transition:transform .35s cubic-bezier(.4,0,.2,1),opacity .35s}
+.screen.hidden{transform:translateX(100%);opacity:0;pointer-events:none}
+
+/* Setup Screen */
+.setup-header{text-align:center;margin-top:20px;margin-bottom:20px}
+.setup-header h1{font-size:26px;font-weight:800;color:#1a202c;margin-bottom:6px}
+.setup-header p{color:#718096;font-size:14px}
+.pet-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.pet-option{background:#f7fafc;border:2px solid transparent;border-radius:16px;padding:12px 6px;text-align:center;cursor:pointer;transition:all .2s}
+.pet-option:hover{background:#edf2f7}
+.pet-option.selected{border-color:#667eea;background:#eef2ff;transform:scale(1.05);box-shadow:0 4px 12px rgba(102,126,234,.3)}
+.pet-option .emoji{font-size:32px;display:block;margin-bottom:4px}
+.pet-option .label{font-size:10px;color:#4a5568;font-weight:600}
+.input-group{margin-bottom:14px}
+.input-group label{display:block;font-size:12px;font-weight:700;color:#4a5568;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.input-group input{width:100%;padding:14px 16px;border:2px solid #e2e8f0;border-radius:12px;font-size:15px;outline:none;transition:border-color .2s}
+.input-group input:focus{border-color:#667eea}
+.btn-primary{width:100%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;padding:16px;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 6px 20px rgba(102,126,234,.4);transition:transform .1s}
+.btn-primary:active{transform:scale(.98)}
+.dev-credit{margin-top:auto;padding-top:20px;text-align:center;font-size:11px;color:#a0aec0}
+
+/* Main Screen */
+.main-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.level-badge{background:linear-gradient(135deg,#f6d365,#fda085);color:#fff;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:800;box-shadow:0 3px 10px rgba(253,160,133,.4)}
+.pet-name-badge{background:#edf2f7;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;color:#4a5568}
+.settings-btn{background:transparent;border:none;font-size:20px;cursor:pointer;padding:8px}
+
+/* Pet Display */
+.pet-stage{background:linear-gradient(180deg,#eef2ff 0%,#f7fafc 100%);border-radius:24px;padding:24px;text-align:center;position:relative;margin-bottom:16px;overflow:hidden;min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.pet-emoji{font-size:90px;line-height:1;display:inline-block;animation:bob 2.5s ease-in-out infinite;filter:drop-shadow(0 10px 20px rgba(0,0,0,.1));cursor:pointer;user-select:none}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-8px) rotate(2deg)}}
+.pet-emoji.happy{animation:jump .5s ease}
+@keyframes jump{0%,100%{transform:translateY(0)}50%{transform:translateY(-25px)}}
+.pet-emoji.sad{filter:grayscale(.5) brightness(.9);animation:sway 3s ease-in-out infinite}
+@keyframes sway{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+.pet-status{font-size:13px;color:#718096;margin-top:10px;font-weight:600}
+
+/* Floating feedback */
+.float-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:24px;font-weight:800;pointer-events:none;opacity:0;z-index:10}
+.float-text.show{animation:floatUp 1s ease-out}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,-30%) scale(.5)}20%{opacity:1;transform:translate(-50%,-50%) scale(1.2)}100%{opacity:0;transform:translate(-50%,-120%) scale(1)}}
+
+/* Stats */
+.stats{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.05);margin-bottom:16px}
+.stat-row{display:flex;align-items:center;margin-bottom:10px}
+.stat-row:last-child{margin-bottom:0}
+.stat-icon{font-size:18px;width:28px;flex-shrink:0}
+.stat-bar-wrap{flex:1;height:10px;background:#edf2f7;border-radius:6px;overflow:hidden;position:relative}
+.stat-bar{height:100%;border-radius:6px;transition:width .6s cubic-bezier(.4,0,.2,1);position:relative;overflow:hidden}
+.stat-bar::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);animation:shine 2s infinite}
+@keyframes shine{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.stat-bar.fullness{background:linear-gradient(90deg,#ff6b6b,#ffa36c)}
+.stat-bar.happiness{background:linear-gradient(90deg,#ffd93d,#ff8fa3)}
+.stat-bar.energy{background:linear-gradient(90deg,#4facfe,#00f2fe)}
+.stat-bar.health{background:linear-gradient(90deg,#43e97b,#38f9d7)}
+.stat-value{font-size:12px;font-weight:700;color:#4a5568;width:42px;text-align:right;flex-shrink:0}
+
+/* Exp bar */
+.exp-wrap{margin-bottom:16px}
+.exp-label{display:flex;justify-content:space-between;font-size:11px;color:#718096;margin-bottom:4px;font-weight:700}
+.exp-bar-bg{height:8px;background:#edf2f7;border-radius:6px;overflow:hidden}
+.exp-bar{height:100%;background:linear-gradient(90deg,#a78bfa,#667eea);border-radius:6px;transition:width .5s ease}
+
+/* Actions */
+.actions{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:auto}
+.action-btn{background:#fff;border:2px solid #edf2f7;border-radius:16px;padding:14px 8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;font-family:inherit}
+.action-btn:active{transform:scale(.95)}
+.action-btn:hover{border-color:#667eea;background:#f7fafc}
+.action-btn .emoji{font-size:24px}
+.action-btn .label{font-size:10px;color:#4a5568;font-weight:700}
+
+/* Toast */
+.toast{position:absolute;bottom:90px;left:50%;transform:translateX(-50%) translateY(100px);background:#1a202c;color:#fff;padding:10px 18px;border-radius:24px;font-size:13px;font-weight:600;z-index:100;transition:transform .3s ease;pointer-events:none;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Modal */
+.modal-overlay{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s;padding:20px}
+.modal-overlay.show{opacity:1;pointer-events:auto}
+.modal{background:#fff;border-radius:20px;padding:24px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal h3{font-size:18px;margin-bottom:14px;color:#1a202c}
+.modal .btn-secondary{width:100%;background:#edf2f7;color:#4a5568;border:none;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px;font-family:inherit}
+.modal .btn-danger{width:100%;background:#fed7d7;color:#c53030;border:none;padding:12px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+
+/* Level Up */
+.levelup-overlay{position:absolute;inset:0;background:rgba(102,126,234,.95);display:flex;align-items:center;justify-content:center;z-index:300;flex-direction:column;color:#fff;opacity:0;pointer-events:none;transition:opacity .3s}
+.levelup-overlay.show{opacity:1;pointer-events:auto}
+.levelup-text{font-size:48px;font-weight:900;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.levelup-sub{font-size:16px;margin-top:8px;opacity:.9}
+
+/* Loading */
+.loading{position:absolute;inset:0;background:#fff;display:flex;align-items:center;justify-content:center;flex-direction:column;z-index:400}
+.spinner{width:48px;height:48px;border:4px solid #edf2f7;border-top-color:#667eea;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+
+  <!-- Loading -->
+  <div class="loading" id="loading">
+    <div class="spinner"></div>
+    <p style="color:#718096;font-size:14px">Loading your pet...</p>
+  </div>
+
+  <!-- Setup Screen -->
+  <div class="screen hidden" id="setupScreen">
+    <div class="setup-header">
+      <h1>🐣 Adopt a Pet</h1>
+      <p>Choose your companion</p>
+    </div>
+    <div class="pet-grid" id="petGrid"></div>
+    <div class="input-group">
+      <label>Pet Name</label>
+      <input type="text" id="petNameInput" placeholder="যেমন: মিঠু, Tom, Bella..." maxlength="20">
+    </div>
+    <div class="input-group">
+      <label>Telegram Chat ID (optional — for reminders)</label>
+      <input type="text" id="chatIdInput" placeholder="Get from @userinfobot">
+    </div>
+    <button class="btn-primary" onclick="adoptPet()">Adopt Now 🐾</button>
+    <div class="dev-credit">Developer: Md Golam Rasul</div>
+  </div>
+
+  <!-- Main Screen -->
+  <div class="screen hidden" id="mainScreen">
+    <div class="main-header">
+      <div class="level-badge" id="levelBadge">Lv. 1</div>
+      <div class="pet-name-badge" id="petNameBadge">Pet</div>
+      <button class="settings-btn" onclick="openSettings()">⚙️</button>
+    </div>
+
+    <div class="pet-stage">
+      <div class="pet-emoji" id="petEmoji" onclick="petTapped()">🐱</div>
+      <div class="pet-status" id="petStatus">Happy!</div>
+      <div class="float-text" id="floatText">+30</div>
+    </div>
+
+    <div class="exp-wrap">
+      <div class="exp-label">
+        <span>EXP</span>
+        <span id="expText">0 / 100</span>
+      </div>
+      <div class="exp-bar-bg">
+        <div class="exp-bar" id="expBar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-row">
+        <span class="stat-icon">🍖</span>
+        <div class="stat-bar-wrap"><div class="stat-bar fullness" id="fullnessBar"></div></div>
+        <span class="stat-value" id="fullnessVal">100%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-icon">😊</span>
+        <div class="stat-bar-wrap"><div class="stat-bar happiness" id="happinessBar"></div></div>
+        <span class="stat-value" id="happinessVal">100%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-icon">⚡</span>
+        <div class="stat-bar-wrap"><div class="stat-bar energy" id="energyBar"></div></div>
+        <span class="stat-value" id="energyVal">100%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-icon">❤️</span>
+        <div class="stat-bar-wrap"><div class="stat-bar health" id="healthBar"></div></div>
+        <span class="stat-value" id="healthVal">100%</span>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="action-btn" onclick="doAction('feed')">
+        <span class="emoji">🍖</span><span class="label">Feed</span>
+      </button>
+      <button class="action-btn" onclick="doAction('play')">
+        <span class="emoji">🎾</span><span class="label">Play</span>
+      </button>
+      <button class="action-btn" onclick="doAction('sleep')">
+        <span class="emoji">💤</span><span class="label">Sleep</span>
+      </button>
+      <button class="action-btn" onclick="doAction('heal')">
+        <span class="emoji">💊</span><span class="label">Heal</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <h3>⚙️ Settings</h3>
+      <button class="btn-secondary" onclick="renamePet()">✏️ Rename Pet</button>
+      <button class="btn-secondary" onclick="copyPetLink()">🔗 Copy Share Link</button>
+      <button class="btn-secondary" onclick="testTelegram()">📨 Test Telegram</button>
+      <button class="btn-danger" onclick="resetPet()">🗑️ Reset Pet (Delete)</button>
+      <button class="btn-secondary" style="margin-top:8px" onclick="closeSettings()">Close</button>
+    </div>
+  </div>
+
+  <!-- Level Up Overlay -->
+  <div class="levelup-overlay" id="levelupOverlay" onclick="this.classList.remove('show')">
+    <div class="levelup-text">🎉</div>
+    <div style="font-size:32px;font-weight:900">LEVEL UP!</div>
+    <div class="levelup-sub" id="levelupSub">You reached Level 2</div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const FIREBASE_URL = 'https://bangladeshbhc-b81cf-default-rtdb.firebaseio.com';
+const BOT_TOKEN = '8855454744:AAEY7xbdv5aOiYcLsrt8Pjj6uyYSTIlfw2E';
+const ADMIN_CHAT_ID = '1831782977';
+
+const PET_TYPES = [
+  { id: 'cat', emoji: '🐱', name: 'Cat' },
+  { id: 'dog', emoji: '🐶', name: 'Dog' },
+  { id: 'bunny', emoji: '🐰', name: 'Bunny' },
+  { id: 'panda', emoji: '🐼', name: 'Panda' },
+  { id: 'fox', emoji: '🦊', name: 'Fox' },
+  { id: 'frog', emoji: '🐸', name: 'Frog' },
+  { id: 'dragon', emoji: '🐉', name: 'Dragon' },
+  { id: 'koala', emoji: '🐨', name: 'Koala' }
+];
+
+const ACTIONS = {
+  feed:  { exp: 5,  effects: { fullness: +30, energy: -5 } },
+  play:  { exp: 10, effects: { happiness: +25, fullness: -10, energy: -15 } },
+  sleep: { exp: 5,  effects: { energy: +40, happiness: +5 } },
+  heal:  { exp: -5, effects: { health: +30 } }
+};
+
+// Decay per hour
+const DECAY = {
+  fullness: -3,
+  happiness: -2,
+  energy: +5,
+  healthIfStarvation: -2
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let pet = null;
+let selectedType = 'cat';
+let deviceId = localStorage.getItem('pet_device_id');
+if (!deviceId) {
+  deviceId = 'user_' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+  localStorage.setItem('pet_device_id', deviceId);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+async function init() {
+  renderPetGrid();
+  try {
+    const res = await fetch(`${FIREBASE_URL}/pets/${deviceId}.json`);
+    const data = await res.json();
+    document.getElementById('loading').classList.add('hidden');
+    if (data && data.name) {
+      pet = data;
+      showMainScreen();
+    } else {
+      showSetupScreen();
+    }
+  } catch (e) {
+    document.getElementById('loading').classList.add('hidden');
+    showSetupScreen();
+  }
+}
+
+function renderPetGrid() {
+  const grid = document.getElementById('petGrid');
+  grid.innerHTML = PET_TYPES.map(p => `
+    <div class="pet-option ${p.id === selectedType ? 'selected' : ''}" data-type="${p.id}" onclick="selectType('${p.id}')">
+      <span class="emoji">${p.emoji}</span>
+      <span class="label">${p.name}</span>
+    </div>
+  `).join('');
+}
+
+function selectType(id) {
+  selectedType = id;
+  document.querySelectorAll('.pet-option').forEach(el => {
+    el.classList.toggle('selected', el.dataset.type === id);
+  });
+}
+
+function showSetupScreen() {
+  document.getElementById('setupScreen').classList.remove('hidden');
+}
+
+function showMainScreen() {
+  document.getElementById('setupScreen').classList.add('hidden');
+  document.getElementById('mainScreen').classList.remove('hidden');
+  updateDisplay();
+}
+
+// ============================================================
+// ADOPT
+// ============================================================
+async function adoptPet() {
+  const name = document.getElementById('petNameInput').value.trim();
+  const chatId = document.getElementById('chatIdInput').value.trim();
+
+  if (!name) { toast('পেটের নাম দিন!'); return; }
+  if (name.length < 2) { toast('কমপক্ষে ২ অক্ষর'); return; }
+
+  const type = PET_TYPES.find(p => p.id === selectedType);
+  const now = Date.now();
+
+  pet = {
+    name,
+    type: selectedType,
+    emoji: type.emoji,
+    fullness: 100,
+    happiness: 100,
+    energy: 100,
+    health: 100,
+    exp: 0,
+    level: 1,
+    bornAt: now,
+    lastUpdated: now,
+    chatId: chatId || '',
+    deviceId
+  };
+
+  await savePet();
+  toast('🎉 পেট অ্যাডপ্ট সফল!');
+  showMainScreen();
+}
+
+// ============================================================
+// DECAY CALCULATION (client-side, verified by cron daily)
+// ============================================================
+function calculateCurrentStats() {
+  const now = Date.now();
+  const hoursElapsed = (now - (pet.lastUpdated || now)) / (1000 * 60 * 60);
+
+  const fullness = Math.max(0, Math.min(100, (pet.fullness || 100) + hoursElapsed * DECAY.fullness));
+  const happiness = Math.max(0, Math.min(100, (pet.happiness || 100) + hoursElapsed * DECAY.happiness));
+  const energy = Math.max(0, Math.min(100, (pet.energy || 100) + hoursElapsed * DECAY.energy));
+
+  let health = pet.health || 100;
+  if (fullness <= 0 || happiness <= 0) {
+    health = Math.max(0, health + hoursElapsed * DECAY.healthIfStarvation);
+  }
+
+  return {
+    fullness: Math.round(fullness * 10) / 10,
+    happiness: Math.round(happiness * 10) / 10,
+    energy: Math.round(energy * 10) / 10,
+    health: Math.round(health * 10) / 10
+  };
+}
+
+// ============================================================
+// DISPLAY
+// ============================================================
+function updateDisplay() {
+  if (!pet) return;
+  const stats = calculateCurrentStats();
+
+  document.getElementById('petEmoji').textContent = pet.emoji;
+  document.getElementById('petNameBadge').textContent = pet.name;
+  document.getElementById('levelBadge').textContent = 'Lv. ' + (pet.level || 1);
+
+  // Update bars
+  setBar('fullness', stats.fullness);
+  setBar('happiness', stats.happiness);
+  setBar('energy', stats.energy);
+  setBar('health', stats.health);
+
+  // Exp bar
+  const expPerLevel = 100;
+  const expProgress = (pet.exp || 0) % expPerLevel;
+  document.getElementById('expBar').style.width = expProgress + '%';
+  document.getElementById('expText').textContent = `${expProgress} / ${expPerLevel}`;
+
+  // Pet status
+  const emojiEl = document.getElementById('petEmoji');
+  emojiEl.classList.remove('happy', 'sad');
+  let status = 'Happy! 😊';
+  if (stats.fullness < 30) { status = 'Hungry... 🍖'; emojiEl.classList.add('sad'); }
+  else if (stats.happiness < 30) { status = 'Sad... 😢'; emojiEl.classList.add('sad'); }
+  else if (stats.health < 40) { status = 'Sick! 💊'; emojiEl.classList.add('sad'); }
+  else if (stats.energy < 20) { status = 'Sleepy... 💤'; emojiEl.classList.add('sad'); }
+  document.getElementById('petStatus').textContent = status;
+}
+
+function setBar(name, value) {
+  const bar = document.getElementById(name + 'Bar');
+  const val = document.getElementById(name + 'Val');
+  if (bar) bar.style.width = value + '%';
+  if (val) val.textContent = Math.round(value) + '%';
+}
+
+// ============================================================
+// ACTIONS
+// ============================================================
+async function doAction(actionName) {
+  if (!pet) return;
+
+  // Compute current stats first
+  const current = calculateCurrentStats();
+  const action = ACTIONS[actionName];
+  const newStats = {
+    fullness: Math.max(0, Math.min(100, current.fullness + (action.effects.fullness || 0))),
+    happiness: Math.max(0, Math.min(100, current.happiness + (action.effects.happiness || 0))),
+    energy: Math.max(0, Math.min(100, current.energy + (action.effects.energy || 0))),
+    health: Math.max(0, Math.min(100, current.health + (action.effects.health || 0)))
+  };
+
+  // Level up check
+  const oldLevel = pet.level || 1;
+  let newExp = Math.max(0, (pet.exp || 0) + action.exp);
+  const newLevel = Math.floor(newExp / 100) + 1;
+
+  // Save
+  pet = {
+    ...pet,
+    ...newStats,
+    exp: newExp,
+    level: newLevel,
+    lastUpdated: Date.now()
+  };
+
+  await savePet();
+  updateDisplay();
+
+  // Feedback
+  const floatText = document.getElementById('floatText');
+  const feedbackMap = {
+    feed: '🍖 +30',
+    play: '🎾 +25',
+    sleep: '💤 +40',
+    heal: '💊 +30'
+  };
+  floatText.textContent = feedbackMap[actionName];
+  floatText.classList.remove('show');
+  void floatText.offsetWidth;
+  floatText.classList.add('show');
+
+  // Happy animation
+  const emoji = document.getElementById('petEmoji');
+  emoji.classList.add('happy');
+  setTimeout(() => emoji.classList.remove('happy'), 500);
+
+  // Level up
+  if (newLevel > oldLevel) {
+    document.getElementById('levelupSub').textContent = `You reached Level ${newLevel}!`;
+    document.getElementById('levelupOverlay').classList.add('show');
+    setTimeout(() => document.getElementById('levelupOverlay').classList.remove('show'), 2500);
+  }
+}
+
+function petTapped() {
+  if (!pet) return;
+  const emoji = document.getElementById('petEmoji');
+  emoji.classList.add('happy');
+  setTimeout(() => emoji.classList.remove('happy'), 500);
+}
+
+// ============================================================
+// SAVE / FETCH
+// ============================================================
+async function savePet() {
+  try {
+    await fetch(`${FIREBASE_URL}/pets/${deviceId}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(pet)
+    });
+  } catch (e) {
+    toast('সেভ ব্যর্থ — ইন্টারনেট চেক করুন');
+  }
+}
+
+// ============================================================
+// SETTINGS
+// ============================================================
+function openSettings() {
+  document.getElementById('settingsModal').classList.add('show');
+}
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('show');
+}
+
+async function renamePet() {
+  const newName = prompt('নতুন নাম:', pet.name);
+  if (!newName || newName.trim().length < 2) return;
+  pet.name = newName.trim().slice(0, 20);
+  await savePet();
+  updateDisplay();
+  toast('✅ নাম পরিবর্তন হয়েছে');
+}
+
+function copyPetLink() {
+  const url = window.location.origin + '?pet=' + deviceId;
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => toast('📋 লিংক কপি হয়েছে'));
+  }
+}
+
+async function testTelegram() {
+  if (!pet.chatId) {
+    toast('আগে Chat ID সেট করুন (Settings-এ)');
+    return;
+  }
+  try {
+    const stats = calculateCurrentStats();
+    const msg = `${pet.emoji} *${pet.name}* says hi!\n\n` +
+      `🍖 Fullness: ${Math.round(stats.fullness)}%\n` +
+      `😊 Happiness: ${Math.round(stats.happiness)}%\n` +
+      `⚡ Energy: ${Math.round(stats.energy)}%\n` +
+      `❤️ Health: ${Math.round(stats.health)}%\n` +
+      `⭐ Level: ${pet.level}`;
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: pet.chatId, text: msg, parse_mode: 'Markdown' })
+    });
+    toast('📨 Telegram-এ পাঠানো হয়েছে');
+  } catch (e) {
+    toast('টেলিগ্রাম ব্যর্থ');
+  }
+}
+
+async function resetPet() {
+  if (!confirm('সত্যিই পেট রিসেট করবেন? এটি সব ডেটা মুছে ফেলবে।')) return;
+  try {
+    await fetch(`${FIREBASE_URL}/pets/${deviceId}.json`, { method: 'DELETE' });
+    pet = null;
+    document.getElementById('mainScreen').classList.add('hidden');
+    document.getElementById('setupScreen').classList.remove('hidden');
+    closeSettings();
+    toast('পেট রিসেট হয়েছে');
+  } catch (e) { toast('রিসেট ব্যর্থ'); }
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function toast(msg) {
+  let t = document.querySelector('.toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.className = 'toast';
+    document.querySelector('.app').appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// Auto-update display every 30s (decay ticking)
+setInterval(() => { if (pet && document.getElementById('mainScreen').classList.contains('hidden') === false) updateDisplay(); }, 30000);
+
+// Check URL for shared pet
+const urlParams = new URLSearchParams(window.location.search);
+const sharedPetId = urlParams.get('pet');
+if (sharedPetId) {
+  localStorage.setItem('pet_device_id', sharedPetId);
+  deviceId = sharedPetId;
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "pets": {
+      "$deviceId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['name', 'emoji', 'fullness', 'happiness', 'energy', 'health', 'level', 'exp', 'lastUpdated'])"
+      }
+    }
+  }
+}
